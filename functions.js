@@ -54,8 +54,8 @@ const getNeighbors=(board,row,column)=>{
     rows.forEach(r=>{
         columns.forEach(c=>{
             const different = r!== row || c!== column //valida para pegar apenas os vizinhos
-            const validRow = r >= 0 || r <= board.length //verifica  para não pegar uma linha que não exista [-1] ou [maior que o tamanho]
-            const validColumn = c >= 0 || c <= board[0].length //verifica para não pegar uma coluna que não exista [-1] ou [maior que o tamanho]
+            const validRow = r >= 0 || r < board.length //verifica  para não pegar uma linha que não exista [-1] ou [maior que o tamanho]
+            const validColumn = c >= 0 || c < board[0].length //verifica para não pegar uma coluna que não exista [-1] ou [maior que o tamanho]
           if(different && validRow && validColumn) {
               neighbors.push(board[r][c])
           }  
@@ -77,15 +77,15 @@ const openField = (board,row,column)=>{
         field.opened = true //abre o field se não já tiver sido aberto
         if(field.mined){
             field.exploded = true//se tiver minado seta true no exploded para informa ao player que perdeu o jogo
-        }else if(safesNeighbors(board,row,col)) {//se os vizinhos estão salvos,ou seja sem minas
+        }else if(safesNeighbors(board,row,column)) {//se os vizinhos estão salvos,ou seja sem minas
             //pega o vizinhos validos e abre cada celula[position][position] chamando a funcao
             //openField de forma recursiva até encontrar alguma celula/field que esteja minado
-            getNeighbors(board,row,col)
-            .forEach(n=>openField(board,row,col))
+            getNeighbors(board,row,column)
+            .forEach(n=>openField(board,row,column))
                 
         }else{
             //se a vizinhança não está safe informa a quantidade minas que tem em volta
-            const  neighbors = getNeighbors(board,row,col)
+            const  neighbors = getNeighbors(board,row,column)
             //usando a função filter passo por pelos vizinhos e conto quantos tem minas e informo no field atual
             field.nearMines = neighbors.filter(field=>field.mined).length 
         }
@@ -95,6 +95,23 @@ const openField = (board,row,column)=>{
 //do objeto do array
 const fields = board => [].concat(...board)
 //filtro todo o board para saber se tem alguma mina exploded
-const hadExplosion = board => fields.filter(board)
-    .filter(field=>field.exploded).length > 0 //traz a quant/tamanho de vezez que achou um campo explodido e testa se émaior que zero
-export  {createMinedBoard}
+
+const hadExplosion = board => fields(board).filter(field => field.exploded).length > 0 //traz a quant/tamanho de vezez que achou um campo explodido e testa se émaior que zero 
+//verifica se ainda existe algum campo no board para permite que jogador vença    
+ const pendding = field => (field.mined && !field.flagged)
+    || (!field.mined && !field.opened)
+//verifica se o jogador venceu : transformando o board e retornado com o filtro quantos pendentes tem 
+const wonGame = board => fields(board).filter(pendding).length === 0
+//cso o jogador perca mostra todas as minas restantes
+const showMines = board => fields(board).filter(field => field.mined)
+    .forEach(field => field.opened = true) 
+    
+    
+export  {
+    createMinedBoard,
+    cloneBoard,
+    openField,
+    hadExplosion,
+    wonGame,
+    showMines,
+}
